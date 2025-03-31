@@ -2,7 +2,12 @@
   <lay-layout class="layui-layout-admin">
     <!-- 头部区域 -->
     <lay-header>
-      <lay-logo>DBee</lay-logo>
+      <lay-logo>
+        <div class="logo-container">
+          <img src="/static/images/bee-logo.png" alt="DBee" class="logo-img" />
+          <span>DBee</span>
+        </div>
+      </lay-logo>
       
       <!-- 头部右侧菜单 -->
       <div class="layui-header-right">
@@ -155,6 +160,17 @@ watch(() => route.path, (path) => {
       font-size: 18px;
       font-weight: bold;
       margin-right: 20px;
+      
+      .logo-container {
+        display: flex;
+        align-items: center;
+        
+        .logo-img {
+          width: 32px;
+          height: 32px;
+          margin-right: 8px;
+        }
+      }
     }
     
     .layui-header-right {
