@@ -1,0 +1,109 @@
+// 重置样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+// 布局样式
+.layui-layout-admin {
+  .layui-header {
+    height: 60px;
+    line-height: 60px;
+    background-color: #23262E;
+    color: #fff;
+  }
+
+  .layui-side {
+    width: 200px;
+    background-color: #23262E;
+    color: #fff;
+  }
+
+  .layui-body {
+    background-color: #f2f2f2;
+    padding: 15px;
+  }
+}
+
+// 卡片样式
+.layui-card {
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+
+  .layui-card-header {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .layui-card-body {
+    padding: 15px;
+  }
+}
+
+// 表格样式
+.layui-table {
+  .layui-table-header {
+    background-color: #fafafa;
+  }
+
+  .layui-table-cell {
+    padding: 8px 15px;
+  }
+}
+
+// 按钮样式
+.layui-btn {
+  &-sm {
+    padding: 0 10px;
+    height: 28px;
+    line-height: 26px;
+  }
+}
+
+// 标签样式
+.layui-tag {
+  padding: 0 8px;
+  height: 24px;
+  line-height: 22px;
+  border-radius: 2px;
+}
+
+// 分页样式
+.layui-laypage {
+  margin-top: 15px;
+  text-align: right;
+}
+
+// 工具类
+.mt-4 {
+  margin-top: 16px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-center {
+  align-items: center;
+} 
