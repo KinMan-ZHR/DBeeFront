@@ -1,84 +1,133 @@
 <template>
   <div class="deployment-list">
-    <lay-card title="部署列表">
-      <template #extra>
-        <lay-button type="primary" @click="handleAdd">新增部署</lay-button>
-      </template>
+    <lay-card title="部署管理">
+      <!-- 搜索表单 -->
+      <div class="search-form">
+        <lay-form :model="searchForm" ref="searchFormRef">
+          <lay-row :space="16">
+            <lay-col :md="6" :sm="12" :xs="24">
+              <lay-form-item label="应用名称">
+                <lay-input v-model="searchForm.appName" placeholder="请输入应用名称"></lay-input>
+              </lay-form-item>
+            </lay-col>
+            <lay-col :md="6" :sm="12" :xs="24">
+              <lay-form-item label="环境">
+                <lay-select v-model="searchForm.env" placeholder="请选择环境">
+                  <lay-select-option value="" label="全部"></lay-select-option>
+                  <lay-select-option value="dev" label="开发环境"></lay-select-option>
+                  <lay-select-option value="test" label="测试环境"></lay-select-option>
+                  <lay-select-option value="prod" label="生产环境"></lay-select-option>
+                </lay-select>
+              </lay-form-item>
+            </lay-col>
+            <lay-col :md="6" :sm="12" :xs="24">
+              <lay-form-item label="状态">
+                <lay-select v-model="searchForm.status" placeholder="请选择状态">
+                  <lay-select-option value="" label="全部"></lay-select-option>
+                  <lay-select-option value="running" label="运行中"></lay-select-option>
+                  <lay-select-option value="failed" label="已失败"></lay-select-option>
+                  <lay-select-option value="success" label="已完成"></lay-select-option>
+                </lay-select>
+              </lay-form-item>
+            </lay-col>
+            <lay-col :md="6" :sm="24" :xs="24">
+              <lay-form-item>
+                <lay-button type="primary" @click="handleSearch">查询</lay-button>
+                <lay-button @click="handleReset">重置</lay-button>
+                <lay-button type="primary" @click="handleCreate">新建部署</lay-button>
+              </lay-form-item>
+            </lay-col>
+          </lay-row>
+        </lay-form>
+      </div>
       
-      <lay-form :model="searchForm" inline>
-        <lay-form-item label="应用名称">
-          <lay-select v-model="searchForm.appId" placeholder="请选择应用">
-            <lay-option v-for="app in appOptions" :key="app.id" :label="app.name" :value="app.id" />
-          </lay-select>
-        </lay-form-item>
-        <lay-form-item label="部署状态">
-          <lay-select v-model="searchForm.status" placeholder="请选择状态">
-            <lay-option label="成功" value="success" />
-            <lay-option label="失败" value="failed" />
-            <lay-option label="进行中" value="running" />
-          </lay-select>
-        </lay-form-item>
-        <lay-form-item>
-          <lay-button type="primary" @click="handleSearch">查询</lay-button>
-          <lay-button @click="handleReset">重置</lay-button>
-        </lay-form-item>
-      </lay-form>
-
-      <lay-table :columns="columns" :data-source="tableData" :loading="loading">
-        <template #status="{ row }">
-          <lay-tag :type="getStatusType(row.status)">
-            {{ getStatusText(row.status) }}
-          </lay-tag>
+      <!-- 数据表格 -->
+      <lay-table 
+        :columns="columns" 
+        :data-source="tableData" 
+        :loading="loading"
+        :page="page"
+        @page-change="handlePageChange"
+      >
+        <!-- 环境类型 -->
+        <template #env="{ row }">
+          <lay-tag :type="getEnvType(row.env)">{{ getEnvName(row.env) }}</lay-tag>
         </template>
+        
+        <!-- 状态 -->
+        <template #status="{ row }">
+          <lay-tag :type="getStatusType(row.status)">{{ getStatusName(row.status) }}</lay-tag>
+        </template>
+        
+        <!-- 操作 -->
         <template #action="{ row }">
-          <lay-button type="primary" size="sm" @click="handleView(row)">查看</lay-button>
-          <lay-button type="danger" size="sm" @click="handleDelete(row)">删除</lay-button>
+          <lay-button size="sm" type="primary" @click="viewDetail(row.id)">详情</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'running'" @click="stopDeployment(row.id)">停止</lay-button>
+          <lay-button size="sm" type="danger" @click="deleteDeployment(row.id)">删除</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'success'" @click="scaleReplicas(row.id)">伸缩</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'success'" @click="viewMonitor(row.id)">监控</lay-button>
+        </template>
+        
+        <!-- 空数据模板 -->
+        <template #empty>
+          <div class="empty-data">
+            <img src="https://img.icons8.com/color/48/000000/box-important--v1.png" alt="暂无数据" />
+            <p>暂无部署数据</p>
+          </div>
         </template>
       </lay-table>
-
-      <div class="pagination-container">
-        <lay-pagination
-          v-model:current="currentPage"
-          v-model:limit="pageSize"
-          :total="total"
-          :show-total="true"
-          @change="handlePageChange"
-        />
-      </div>
     </lay-card>
-
-    <!-- 新增部署弹窗 -->
-    <lay-layer v-model="showDialog" :title="dialogTitle" :area="['500px', '400px']">
-      <lay-form :model="form" label-width="100px">
-        <lay-form-item label="应用" required>
-          <lay-select v-model="form.appId" placeholder="请选择应用">
-            <lay-option v-for="app in appOptions" :key="app.id" :label="app.name" :value="app.id" />
-          </lay-select>
-        </lay-form-item>
-        <lay-form-item label="部署环境" required>
-          <lay-select v-model="form.env" placeholder="请选择环境">
-            <lay-option label="开发环境" value="dev" />
-            <lay-option label="测试环境" value="test" />
-            <lay-option label="生产环境" value="prod" />
-          </lay-select>
-        </lay-form-item>
-        <lay-form-item label="部署版本" required>
-          <lay-input v-model="form.version" placeholder="请输入部署版本" />
-        </lay-form-item>
-        <lay-form-item label="部署说明">
-          <lay-textarea v-model="form.description" placeholder="请输入部署说明" />
-        </lay-form-item>
-      </lay-form>
-      <template #footer>
-        <lay-button @click="showDialog = false">取消</lay-button>
-        <lay-button type="primary" @click="handleSubmit">确定</lay-button>
-      </template>
+    
+    <!-- 伸缩实例弹窗 -->
+    <lay-layer v-model="scaleVisible" :title="'伸缩实例 - ' + currentDeployment.appName" :area="['500px', '300px']">
+      <div class="scale-form">
+        <lay-form :model="scaleForm" ref="scaleFormRef">
+          <lay-form-item label="当前实例数">
+            <lay-input v-model="scaleForm.currentReplicas" disabled></lay-input>
+          </lay-form-item>
+          <lay-form-item label="目标实例数">
+            <lay-input-number v-model="scaleForm.targetReplicas" :min="1" :max="10"></lay-input-number>
+          </lay-form-item>
+          <lay-form-item>
+            <lay-button type="primary" @click="confirmScale">确认</lay-button>
+            <lay-button @click="scaleVisible = false">取消</lay-button>
+          </lay-form-item>
+        </lay-form>
+      </div>
+    </lay-layer>
+    
+    <!-- 监控弹窗 -->
+    <lay-layer v-model="monitorVisible" :title="'应用监控 - ' + currentDeployment.appName" :area="['800px', '500px']">
+      <div class="monitor-tabs">
+        <lay-tabs v-model="activeMonitorTab">
+          <lay-tab-item title="CPU使用率" id="cpu">
+            <div class="chart-container">
+              <img src="https://img.icons8.com/color/96/000000/line-chart--v1.png" class="chart-placeholder" />
+              <p class="chart-text">CPU使用率历史数据</p>
+            </div>
+          </lay-tab-item>
+          <lay-tab-item title="内存使用率" id="memory">
+            <div class="chart-container">
+              <img src="https://img.icons8.com/color/96/000000/line-chart--v1.png" class="chart-placeholder" />
+              <p class="chart-text">内存使用率历史数据</p>
+            </div>
+          </lay-tab-item>
+          <lay-tab-item title="网络流量" id="network">
+            <div class="chart-container">
+              <img src="https://img.icons8.com/color/96/000000/line-chart--v1.png" class="chart-placeholder" />
+              <p class="chart-text">网络流量历史数据</p>
+            </div>
+          </lay-tab-item>
+        </lay-tabs>
+      </div>
     </lay-layer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import type { FormInstance } from '@layui/layui-vue'
 import type { Deployment, App } from '@/types/api'
 import { getAppList } from '@/api/app'
 import {
@@ -90,119 +139,211 @@ import {
 } from '@/api/deployment'
 import { layer } from '@layui/layui-vue'
 
+const router = useRouter()
+const loading = ref(false)
+const tableData = ref<any[]>([])
+const searchFormRef = ref<FormInstance>()
+const scaleFormRef = ref<FormInstance>()
+const scaleVisible = ref(false)
+const monitorVisible = ref(false)
+const activeMonitorTab = ref('cpu')
+const currentDeployment = ref<any>({})
+
+// 分页配置
+const page = reactive({
+  current: 1,
+  limit: 10,
+  total: 0
+})
+
+// 搜索表单
 const searchForm = reactive({
-  appId: '',
+  appName: '',
+  env: '',
   status: ''
 })
 
-const formData = reactive({
-  appId: undefined as number | undefined,
-  version: '',
-  env: '',
-  description: ''
+// 伸缩表单
+const scaleForm = reactive({
+  currentReplicas: 1,
+  targetReplicas: 1
 })
 
-const loading = ref(false)
-const showDialog = ref(false)
-const dialogTitle = ref('新增部署')
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const tableData = ref<Deployment[]>([])
-const appOptions = ref<App[]>([])
-
+// 表格列定义
 const columns = [
-  { title: '应用名称', prop: 'appName' },
-  { title: '部署环境', prop: 'env' },
-  { title: '部署版本', prop: 'version' },
-  { title: '部署状态', prop: 'status', slot: 'status' },
-  { title: '部署时间', prop: 'deployTime' },
-  { title: '操作', slot: 'action', width: 150 }
+  { title: 'ID', prop: 'id', width: 80 },
+  { title: '应用名称', prop: 'appName', width: 120 },
+  { title: '环境', prop: 'env', slot: 'env', width: 100 },
+  { title: '状态', prop: 'status', slot: 'status', width: 100 },
+  { title: '版本号', prop: 'version', width: 100 },
+  { title: '实例数', prop: 'replicas', width: 80 },
+  { title: '创建人', prop: 'creator', width: 100 },
+  { title: '创建时间', prop: 'createTime', width: 160 },
+  { title: '操作', slot: 'action', width: 320 }
 ]
 
+const appOptions = ref<App[]>([])
+
+const getEnvType = (env: string) => {
+  switch (env) {
+    case 'dev':
+      return 'primary'
+    case 'test':
+      return 'normal'
+    case 'prod':
+      return 'danger'
+    default:
+      return 'primary'
+  }
+}
+
+const getEnvName = (env: string) => {
+  switch (env) {
+    case 'dev':
+      return '开发环境'
+    case 'test':
+      return '测试环境'
+    case 'prod':
+      return '生产环境'
+    default:
+      return '未知环境'
+  }
+}
+
 const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    success: 'primary',
-    failed: 'danger',
-    running: 'warm'
-  }
-  return types[status] || 'normal'
-}
-
-const getStatusText = (status: string) => {
-  const texts: Record<string, string> = {
-    success: '成功',
-    failed: '失败',
-    running: '进行中'
-  }
-  return texts[status] || status
-}
-
-const handleAdd = () => {
-  dialogTitle.value = '新增部署'
-  Object.assign(formData, {
-    appId: undefined,
-    version: '',
-    env: '',
-    description: ''
-  })
-  showDialog.value = true
-}
-
-const handleView = async (row: Deployment) => {
-  try {
-    const logs = await getDeploymentLogs(row.id)
-    // TODO: 显示日志详情
-    console.log('部署日志:', logs)
-  } catch (error) {
-    console.error('获取部署日志失败:', error)
+  switch (status) {
+    case 'running':
+      return 'warm'
+    case 'success':
+      return 'primary'
+    case 'failed':
+      return 'danger'
+    default:
+      return 'normal'
   }
 }
 
-const handleDelete = (row: Deployment) => {
-  layer.confirm('确定要删除该部署记录吗？', {
-    title: '提示'
-  }, () => {
-    // TODO: 调用删除API
-    layer.msg('删除成功')
-  })
+const getStatusName = (status: string) => {
+  switch (status) {
+    case 'running':
+      return '运行中'
+    case 'success':
+      return '已完成'
+    case 'failed':
+      return '已失败'
+    default:
+      return '未知状态'
+  }
 }
 
-const handleSearch = async () => {
+const fetchDeployments = () => {
   loading.value = true
-  try {
-    const res = await getDeploymentList({
-      ...searchForm,
-      page: currentPage.value,
-      limit: pageSize.value
-    })
-    tableData.value = res.list
-    total.value = res.total
-  } catch (error) {
-    console.error('获取部署列表失败:', error)
-  } finally {
+  // 模拟异步请求
+  setTimeout(() => {
+    const mockData = []
+    for (let i = 1; i <= 15; i++) {
+      const env = ['dev', 'test', 'prod'][Math.floor(Math.random() * 3)]
+      const status = ['running', 'success', 'failed'][Math.floor(Math.random() * 3)]
+      mockData.push({
+        id: i,
+        appName: `应用${i}`,
+        env,
+        status,
+        version: `v1.${i}.0`,
+        replicas: Math.floor(Math.random() * 5) + 1,
+        creator: '管理员',
+        createTime: '2023-03-31 10:00:00'
+      })
+    }
+    
+    // 模拟筛选
+    let result = [...mockData]
+    if (searchForm.appName) {
+      result = result.filter(item => item.appName.includes(searchForm.appName))
+    }
+    if (searchForm.env) {
+      result = result.filter(item => item.env === searchForm.env)
+    }
+    if (searchForm.status) {
+      result = result.filter(item => item.status === searchForm.status)
+    }
+    
+    // 模拟分页
+    page.total = result.length
+    const start = (page.current - 1) * page.limit
+    const end = start + page.limit
+    tableData.value = result.slice(start, end)
     loading.value = false
-  }
+  }, 500)
+}
+
+const handleSearch = () => {
+  page.current = 1
+  fetchDeployments()
 }
 
 const handleReset = () => {
-  searchForm.appId = ''
-  searchForm.status = ''
-  handleSearch()
+  searchFormRef.value?.resetFields()
+  page.current = 1
+  fetchDeployments()
 }
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  handleSearch()
+const handleCreate = () => {
+  router.push('/deployment/create')
 }
 
-const handleSubmit = async () => {
-  try {
-    await createDeployment(formData)
-    showDialog.value = false
-    handleSearch()
-  } catch (error) {
-    console.error('创建部署失败:', error)
+const handlePageChange = (current: number) => {
+  page.current = current
+  fetchDeployments()
+}
+
+const viewDetail = (id: number) => {
+  router.push(`/deployment/detail/${id}`)
+}
+
+const stopDeployment = (id: number) => {
+  // 模拟停止部署
+  console.log('停止部署:', id)
+  layer.msg('停止部署成功', { icon: 1 })
+  fetchDeployments()
+}
+
+const deleteDeployment = (id: number) => {
+  // 模拟删除部署
+  layer.confirm('确定要删除此部署吗？', {
+    btn: ['确定', '取消']
+  }, function() {
+    console.log('删除部署:', id)
+    layer.msg('删除部署成功', { icon: 1 })
+    fetchDeployments()
+  })
+}
+
+const scaleReplicas = (id: number) => {
+  // 找到当前部署
+  const deployment = tableData.value.find(item => item.id === id)
+  if (deployment) {
+    currentDeployment.value = deployment
+    scaleForm.currentReplicas = deployment.replicas
+    scaleForm.targetReplicas = deployment.replicas
+    scaleVisible.value = true
+  }
+}
+
+const confirmScale = () => {
+  // 模拟伸缩操作
+  console.log('伸缩实例:', currentDeployment.value.id, scaleForm.targetReplicas)
+  layer.msg('伸缩实例成功', { icon: 1 })
+  scaleVisible.value = false
+  fetchDeployments()
+}
+
+const viewMonitor = (id: number) => {
+  // 找到当前部署
+  const deployment = tableData.value.find(item => item.id === id)
+  if (deployment) {
+    currentDeployment.value = deployment
+    monitorVisible.value = true
   }
 }
 
@@ -220,7 +361,7 @@ const getAppListData = async () => {
 
 onMounted(() => {
   getAppListData()
-  handleSearch()
+  fetchDeployments()
 })
 </script>
 
@@ -231,4 +372,59 @@ onMounted(() => {
     text-align: right;
   }
 }
-</style> 
+
+.search-form {
+  margin-bottom: 20px;
+}
+
+.empty-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  
+  img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: #999;
+    font-size: 14px;
+  }
+}
+
+.scale-form {
+  padding: 20px;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  
+  .chart-placeholder {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 16px;
+  }
+  
+  .chart-text {
+    color: #666;
+    font-size: 14px;
+  }
+}
+</style>
+
+<script lang="ts">
+// 扩展 Window 接口，添加 layer 属性
+declare global {
+  interface Window {
+    layer: any
+  }
+}
+</script> 
