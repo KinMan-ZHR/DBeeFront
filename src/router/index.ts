@@ -5,43 +5,49 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('@/views/Home.vue')
-  },
-  {
-    path: '/app',
-    name: 'appList',
-    component: () => import('@/views/app/AppList.vue')
-  },
-  {
-    path: '/app/create',
-    name: 'appCreate',
-    component: () => import('@/views/app/AppCreate.vue')
-  },
-  {
-    path: '/app/edit/:id',
-    name: 'appEdit',
-    component: () => import('@/views/app/AppEdit.vue')
-  },
-  {
-    path: '/deployment',
-    name: 'deploymentList',
-    component: () => import('@/views/deployment/DeploymentList.vue')
-  },
-  {
-    path: '/deployment/create',
-    name: 'deploymentCreate',
-    component: () => import('@/views/deployment/DeploymentCreate.vue')
-  },
-  {
-    path: '/deployment/detail/:id',
-    name: 'deploymentDetail',
-    component: () => import('@/views/deployment/DeploymentDetail.vue')
-  },
-  {
-    path: '/system',
-    name: 'systemConfig',
-    component: () => import('@/views/system/SystemConfig.vue')
+    component: ()=> import('@/layouts/BasicLayout.vue'),
+    children: [
+      {
+        path: '/',
+        name: 'home',
+        component: () => import('@/views/Home.vue')
+      },
+      {
+        path: '/app',
+        name: 'appList',
+        component: () => import('@/views/app/AppList.vue')
+      },
+      {
+        path: '/app/create',
+        name: 'appCreate',
+        component: () => import('@/views/app/AppCreate.vue')
+      },
+      {
+        path: '/app/edit/:id',
+        name: 'appEdit',
+        component: () => import('@/views/app/AppEdit.vue')
+      },
+      {
+        path: '/deployment',
+        name: 'deploymentList',
+        component: () => import('@/views/deployment/DeploymentList.vue')
+      },
+      {
+        path: '/deployment/create',
+        name: 'deploymentCreate',
+        component: () => import('@/views/deployment/DeploymentCreate.vue')
+      },
+      {
+        path: '/deployment/detail/:id',
+        name: 'deploymentDetail',
+        component: () => import('@/views/deployment/DeploymentDetail.vue')
+      },
+      {
+        path: '/system',
+        name: 'systemConfig',
+        component: () => import('@/views/system/SystemConfig.vue')
+      }
+    ]
   }
 ]
 

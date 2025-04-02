@@ -1,7 +1,7 @@
 <template>
   <div class="system-config">
     <lay-card title="系统设置">
-      <lay-tabs v-model="activeName">
+      <lay-tab v-model="activeName">
         <!-- 基本设置 -->
         <lay-tab-item title="基本设置" id="basic">
           <lay-form :model="basicForm" ref="basicFormRef" :label-width="120">
@@ -120,7 +120,7 @@
         <lay-tab-item title="集群设置" id="cluster">
           <lay-empty description="敬请期待..."></lay-empty>
         </lay-tab-item>
-      </lay-tabs>
+      </lay-tab>
     </lay-card>
   </div>
 </template>
@@ -137,7 +137,7 @@ const alertFormRef = ref<FormInstance>()
 // 基本设置表单
 const basicForm = reactive({
   systemName: 'DBee应用部署平台',
-  logoUrl: 'https://img.icons8.com/color/48/000000/bee.png',
+  logoUrl: '/static/images/bee-logo.png',
   sessionTimeout: 30,
   description: '一个简单易用的应用部署和管理平台',
   disableRegister: false

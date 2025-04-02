@@ -11,10 +11,10 @@
         </lay-form-item>
         <lay-form-item label="应用类型">
           <lay-select v-model="searchForm.type" placeholder="请选择应用类型">
-            <lay-option label="Java" value="java" />
-            <lay-option label="Python" value="python" />
-            <lay-option label="Node.js" value="nodejs" />
-            <lay-option label="Go" value="go" />
+            <lay-select-option label="Java" value="java" />
+            <lay-select-option label="Python" value="python" />
+            <lay-select-option label="Node.js" value="nodejs" />
+            <lay-select-option label="Go" value="go" />
           </lay-select>
         </lay-form-item>
         <lay-form-item>
@@ -25,7 +25,7 @@
 
       <lay-table :columns="columns" :data-source="tableData" :loading="loading">
         <template #status="{ row }">
-          <lay-tag :type="row.status === 'running' ? 'success' : 'warning'">
+          <lay-tag :type="row.status === 'running' ? 'primary' : 'warm'">
             {{ row.status === 'running' ? '运行中' : '已停止' }}
           </lay-tag>
         </template>
@@ -36,7 +36,7 @@
       </lay-table>
 
       <div class="pagination-container">
-        <lay-pagination
+        <lay-page
           v-model:current="currentPage"
           v-model:limit="pageSize"
           :total="total"
@@ -54,10 +54,10 @@
         </lay-form-item>
         <lay-form-item label="应用类型" required>
           <lay-select v-model="form.type" placeholder="请选择应用类型">
-            <lay-option label="Java" value="java" />
-            <lay-option label="Python" value="python" />
-            <lay-option label="Node.js" value="nodejs" />
-            <lay-option label="Go" value="go" />
+            <lay-select-option label="Java" value="java" />
+            <lay-select-option label="Python" value="python" />
+            <lay-select-option label="Node.js" value="nodejs" />
+            <lay-select-option label="Go" value="go" />
           </lay-select>
         </lay-form-item>
         <lay-form-item label="应用描述">
@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { layer } from '@layui/layui-vue'
+import { deleteApp } from '@/api/app'
 
 // 搜索表单
 const searchForm = reactive({
@@ -163,12 +164,29 @@ const handleEdit = (row: any) => {
 
 // 删除应用
 const handleDelete = (row: any) => {
-  layer.confirm('确定要删除该应用吗？', {
-    title: '提示'
-  }, () => {
-    // TODO: 调用删除API
-    layer.msg('删除成功')
-  })
+  layer.confirm('确定要删除该应用吗？', 
+    {
+      title: '提示',
+      btn: [
+        {
+          text: '确定',
+          callback: () => {
+            // TODO: 调用删除API
+            tableData.value = tableData.value.filter(item => item.id !== row.id)
+            deleteApp(row.id);
+            layer.msg('删除成功')
+          }
+        },
+        {
+          text: '取消',
+          callback: () => {
+            layer.msg('取消删除')
+          }
+        }
+      ]       
+    }
+  )
+  
 }
 
 // 提交表单

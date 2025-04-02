@@ -40,34 +40,32 @@
           </lay-row>
         </lay-form>
       </div>
-      
+
       <!-- 数据表格 -->
-      <lay-table 
-        :columns="columns" 
-        :data-source="tableData" 
-        :loading="loading"
-        :page="page"
-        @page-change="handlePageChange"
-      >
+      <lay-table :columns="columns" :data-source="tableData" :loading="loading" :page="page"
+        @page-change="handlePageChange">
         <!-- 环境类型 -->
         <template #env="{ row }">
           <lay-tag :type="getEnvType(row.env)">{{ getEnvName(row.env) }}</lay-tag>
         </template>
-        
+
         <!-- 状态 -->
         <template #status="{ row }">
           <lay-tag :type="getStatusType(row.status)">{{ getStatusName(row.status) }}</lay-tag>
         </template>
-        
+
         <!-- 操作 -->
         <template #action="{ row }">
           <lay-button size="sm" type="primary" @click="viewDetail(row.id)">详情</lay-button>
-          <lay-button size="sm" type="primary" v-if="row.status === 'running'" @click="stopDeployment(row.id)">停止</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'running'"
+            @click="stopDeployment(row.id)">停止</lay-button>
           <lay-button size="sm" type="danger" @click="deleteDeployment(row.id)">删除</lay-button>
-          <lay-button size="sm" type="primary" v-if="row.status === 'success'" @click="scaleReplicas(row.id)">伸缩</lay-button>
-          <lay-button size="sm" type="primary" v-if="row.status === 'success'" @click="viewMonitor(row.id)">监控</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'success'"
+            @click="scaleReplicas(row.id)">伸缩</lay-button>
+          <lay-button size="sm" type="primary" v-if="row.status === 'success'"
+            @click="viewMonitor(row.id)">监控</lay-button>
         </template>
-        
+
         <!-- 空数据模板 -->
         <template #empty>
           <div class="empty-data">
@@ -77,7 +75,7 @@
         </template>
       </lay-table>
     </lay-card>
-    
+
     <!-- 伸缩实例弹窗 -->
     <lay-layer v-model="scaleVisible" :title="'伸缩实例 - ' + currentDeployment.appName" :area="['500px', '300px']">
       <div class="scale-form">
@@ -95,11 +93,11 @@
         </lay-form>
       </div>
     </lay-layer>
-    
+
     <!-- 监控弹窗 -->
     <lay-layer v-model="monitorVisible" :title="'应用监控 - ' + currentDeployment.appName" :area="['800px', '500px']">
       <div class="monitor-tabs">
-        <lay-tabs v-model="activeMonitorTab">
+        <lay-tab v-model="activeMonitorTab">
           <lay-tab-item title="CPU使用率" id="cpu">
             <div class="chart-container">
               <img src="https://img.icons8.com/color/96/000000/line-chart--v1.png" class="chart-placeholder" />
@@ -118,7 +116,7 @@
               <p class="chart-text">网络流量历史数据</p>
             </div>
           </lay-tab-item>
-        </lay-tabs>
+        </lay-tab>
       </div>
     </lay-layer>
   </div>
@@ -139,6 +137,8 @@ import {
 } from '@/api/deployment'
 import { layer } from '@layui/layui-vue'
 
+// 添加 PageResult 类型导入
+import type { PageResult } from '@/types/api'
 const router = useRouter()
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -255,7 +255,7 @@ const fetchDeployments = () => {
         createTime: '2023-03-31 10:00:00'
       })
     }
-    
+
     // 模拟筛选
     let result = [...mockData]
     if (searchForm.appName) {
@@ -267,7 +267,7 @@ const fetchDeployments = () => {
     if (searchForm.status) {
       result = result.filter(item => item.status === searchForm.status)
     }
-    
+
     // 模拟分页
     page.total = result.length
     const start = (page.current - 1) * page.limit
@@ -310,13 +310,25 @@ const stopDeployment = (id: number) => {
 
 const deleteDeployment = (id: number) => {
   // 模拟删除部署
-  layer.confirm('确定要删除此部署吗？', {
-    btn: ['确定', '取消']
-  }, function() {
-    console.log('删除部署:', id)
-    layer.msg('删除部署成功', { icon: 1 })
-    fetchDeployments()
-  })
+  layer.confirm('确定要删除此部署吗？',
+    {
+      btn: [
+        {
+          text: '确定', callback: function () {
+            console.log('删除部署:', id)
+            layer.msg('删除部署成功', { icon: 1 })
+            fetchDeployments()
+          }
+        },
+        {
+          text: '取消',
+          callback: function () {
+            layer.msg('已取消删除', { icon: 2 })
+          }
+        }
+      ]
+    }
+  )
 }
 
 const scaleReplicas = (id: number) => {
@@ -353,9 +365,17 @@ const getAppListData = async () => {
       page: 1,
       limit: 100
     })
-    appOptions.value = res.list
+    // 添加空值校验（防御性编程）
+    if (res?.data?.list) {
+      appOptions.value = res.data.list
+    } else {
+      console.warn('获取到的应用列表数据格式异常')
+      layer.msg('数据加载异常，请稍后重试')
+    }
   } catch (error) {
     console.error('获取应用列表失败:', error)
+    // 增强错误处理（用户体验）
+    layer.msg('获取应用列表失败，请检查网络连接', { icon: 2 })
   }
 }
 
@@ -383,13 +403,13 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  
+
   img {
     width: 60px;
     height: 60px;
     margin-bottom: 16px;
   }
-  
+
   p {
     color: #999;
     font-size: 14px;
@@ -406,13 +426,13 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  
+
   .chart-placeholder {
     width: 96px;
     height: 96px;
     margin-bottom: 16px;
   }
-  
+
   .chart-text {
     color: #666;
     font-size: 14px;
@@ -427,4 +447,4 @@ declare global {
     layer: any
   }
 }
-</script> 
+</script>
