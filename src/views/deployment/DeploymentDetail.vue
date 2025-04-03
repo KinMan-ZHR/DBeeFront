@@ -26,6 +26,8 @@
       </div>
       
       <div class="action-section">
+        <lay-button v-if="detail.status === 'stopped'" @click="handleStartDeployment">启动部署</lay-button>
+        <lay-button v-if="detail.status === 'running'" type="danger" @click="handleStopDeployment">停止部署</lay-button>
         <lay-button @click="handleBack">返回</lay-button>
       </div>
     </lay-card>
@@ -35,6 +37,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { startDeployment, stopDeployment } from '@/api/deployment'
 
 const router = useRouter()
 const route = useRoute()
@@ -144,6 +147,28 @@ onMounted(() => {
 const handleBack = () => {
   router.back()
 }
+
+const handleStartDeployment = async () => {
+  try {
+    await startDeployment(detail.id)
+    layer.msg('启动部署成功', { icon: 1 })
+    detail.status = 'running'
+  } catch (error) {
+    console.error('启动部署失败:', error)
+    layer.msg('启动部署失败，请稍后重试', { icon: 2 })
+  }
+}
+
+const handleStopDeployment = async () => {
+  try {
+    await stopDeployment(detail.id)
+    layer.msg('停止部署成功', { icon: 1 })
+    detail.status = 'stopped'
+  } catch (error) {
+    console.error('停止部署失败:', error)
+    layer.msg('停止部署失败，请稍后重试', { icon: 2 })
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -159,4 +184,4 @@ const handleBack = () => {
     text-align: center;
   }
 }
-</style> 
+</style>

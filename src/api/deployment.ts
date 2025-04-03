@@ -44,4 +44,14 @@ export function getDeploymentStats() {
 // 删除部署记录
 export function deleteDeployment(id: number) {
   return request.delete(`/deployment/delete/${id}`)
-} 
+}
+
+// 启动部署
+export function startDeployment(id: number) {
+  return request.post(`/deployment/${id}/start`)
+}
+
+// 停止部署
+export function stopDeployment(id: number) {
+  return request.post(`/deployment/${id}/stop`)
+}

@@ -56,6 +56,12 @@
 
         <!-- 操作 -->
         <template #action="{ row }">
+          <lay-button size="sm" type="primary" v-if="row.status === 'stopped'" @click="handleStartDeployment(row.id)">
+            启动
+          </lay-button>
+          <lay-button size="sm" type="danger" v-if="row.status === 'running'" @click="handleStopDeployment(row.id)">
+            停止
+          </lay-button>
           <lay-button size="sm" type="primary" @click="viewDetail(row.id)">详情</lay-button>
           <lay-button size="sm" type="primary" v-if="row.status === 'running'"
             @click="stopDeployment(row.id)">停止</lay-button>
@@ -133,7 +139,9 @@ import {
   createDeployment,
   cancelDeployment,
   rollbackDeployment,
-  getDeploymentLogs
+  getDeploymentLogs,
+  startDeployment,
+  stopDeployment
 } from '@/api/deployment'
 import { layer } from '@layui/layui-vue'
 
@@ -356,6 +364,28 @@ const viewMonitor = (id: number) => {
   if (deployment) {
     currentDeployment.value = deployment
     monitorVisible.value = true
+  }
+}
+
+const handleStartDeployment = async (id: number) => {
+  try {
+    await startDeployment(id)
+    layer.msg('启动部署成功', { icon: 1 })
+    fetchDeployments()
+  } catch (error) {
+    console.error('启动部署失败:', error)
+    layer.msg('启动部署失败，请稍后重试', { icon: 2 })
+  }
+}
+
+const handleStopDeployment = async (id: number) => {
+  try {
+    await stopDeployment(id)
+    layer.msg('停止部署成功', { icon: 1 })
+    fetchDeployments()
+  } catch (error) {
+    console.error('停止部署失败:', error)
+    layer.msg('停止部署失败，请稍后重试', { icon: 2 })
   }
 }
 
